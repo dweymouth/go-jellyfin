@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
 )
 
 // GetAlbums returns albums with given sort, filter, and paging options.
@@ -63,10 +64,8 @@ func (c *Client) GetGenres(paging Paging) ([]NameID, error) {
 	params.enableRecursive()
 	params.setSorting(Sort{Field: SortByName, Mode: SortAsc})
 	params.setPaging(paging)
-	// TODO
-	//params.setParentId(c.musicView)
 
-	resp, err := c.get("/Genres", params)
+	resp, err := c.get("/MusicGenres", params)
 	if err != nil {
 		return nil, err
 	}
@@ -85,11 +84,61 @@ func (c *Client) GetGenres(paging Paging) ([]NameID, error) {
 	return body.Items, nil
 }
 
+// GetPlaylists retrieves all playlists. Each playlists song count is known, but songs must be
+// retrieved separately
+func (c *Client) GetPlaylists() ([]*Playlist, error) {
+	params := c.defaultParams()
+	params.setIncludeTypes(mediaTypePlaylist)
+	params.enableRecursive()
+	params["Fields"] = "ChildCount"
+
+	resp, err := c.get(fmt.Sprintf("/Users/%s/Items", c.userID), params)
+	if err != nil {
+		return nil, fmt.Errorf("get playlists: %v", err)
+	}
+	defer resp.Close()
+
+	dto := playlists{}
+	if err = json.NewDecoder(resp).Decode(&dto); err != nil {
+		return nil, fmt.Errorf("parse playlists: %v", err)
+	}
+
+	// filter to MediaType == "Audio"
+	musicPlaylists := make([]*Playlist, 0)
+	for _, pl := range dto.Playlists {
+		if pl.MediaType == string(mediaTypeAudio) {
+			musicPlaylists = append(musicPlaylists, pl)
+		}
+	}
+
+	return musicPlaylists, nil
+}
+
+func (c *Client) GetSimilarSongs(id string, limit int) ([]*Song, error) {
+	params := c.defaultParams()
+	params["Limit"] = strconv.Itoa(limit)
+
+	resp, err := c.get(fmt.Sprintf("/Items/%s/InstantMix", id), params)
+	if err != nil {
+		return nil, fmt.Errorf("get similar songs: %v", err)
+	}
+	defer resp.Close()
+
+	return c.parseSongs(resp)
+}
+
 func (c *Client) parseArtists(resp io.Reader) ([]*Artist, error) {
 	artists := &artists{}
-	err := json.NewDecoder(resp).Decode(&artists)
-	if err != nil {
+	if err := json.NewDecoder(resp).Decode(&artists); err != nil {
 		return nil, fmt.Errorf("decode json: %v", err)
 	}
 	return artists.Artists, nil
+}
+
+func (c *Client) parseSongs(resp io.Reader) ([]*Song, error) {
+	songs := songs{}
+	if err := json.NewDecoder(resp).Decode(&songs); err != nil {
+		return nil, fmt.Errorf("parse similar songs: %v", err)
+	}
+	return songs.Songs, nil
 }

@@ -86,6 +86,7 @@ type Playlist struct {
 	Genres    []string `json:"Genres"`
 	Duration  int64    `json:"RunTimeTicks"`
 	Type      string   `json:"Type"`
+	MediaType string   `json:"MediaType"`
 	SongCount int      `json:"ChildCount"`
 }
 

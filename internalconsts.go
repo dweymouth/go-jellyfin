@@ -5,7 +5,7 @@ type mediaItemType string
 const (
 	mediaTypeAlbum        mediaItemType = "MusicAlbum"
 	mediaTypeArtist       mediaItemType = "MusicArtist"
-	mediaTypeSong         mediaItemType = "Audio"
+	mediaTypeAudio        mediaItemType = "Audio"
 	mediaTypePlaylist     mediaItemType = "Playlist"
 	folderTypePlaylists   mediaItemType = "PlaylistsFolder"
 	folderTypeCollections mediaItemType = "CollectionFolder"

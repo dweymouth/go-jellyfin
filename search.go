@@ -9,7 +9,7 @@ import (
 func searchDtoToItems(rc io.ReadCloser, itemType mediaItemType) (*SearchResult, error) {
 	var result interface{}
 	switch itemType {
-	case mediaTypeSong:
+	case mediaTypeAudio:
 		result = &songs{}
 	case mediaTypeAlbum:
 		result = &albums{}
@@ -28,7 +28,7 @@ func searchDtoToItems(rc io.ReadCloser, itemType mediaItemType) (*SearchResult, 
 
 	searchResult := &SearchResult{}
 	switch itemType {
-	case mediaTypeSong:
+	case mediaTypeAudio:
 		searchResult.Songs = result.(*songs).Songs
 	case mediaTypeAlbum:
 		searchResult.Albums = result.(*albums).Albums
@@ -67,8 +67,8 @@ func (jf *Client) Search(query string, itemType ItemType, limit int) (*SearchRes
 		mediaType = mediaTypeAlbum
 		params.setIncludeTypes(mediaTypeAlbum)
 	case TypeSong:
-		mediaType = mediaTypeSong
-		params.setIncludeTypes(mediaTypeSong)
+		mediaType = mediaTypeAudio
+		params.setIncludeTypes(mediaTypeAudio)
 	case TypePlaylist:
 		mediaType = mediaTypePlaylist
 		params.setIncludeTypes(mediaTypePlaylist)
