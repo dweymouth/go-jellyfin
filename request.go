@@ -69,9 +69,9 @@ func (p params) enableRecursive() {
 	p["Recursive"] = "true"
 }
 
-//func (p params) setParentId(id string) {
-//	p["ParentId"] = id
-//}
+func (p params) setParentID(id string) {
+	p["ParentId"] = id
+}
 
 func (p params) setFilter(tItem mediaItemType, filter Filter) {
 	f := ""
