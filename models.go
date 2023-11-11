@@ -13,9 +13,11 @@ const (
 )
 
 type UserData struct {
-	PlayCount  int  `json:"PlayCount"`
-	IsFavorite bool `json:"IsFavorite"`
-	Played     bool `json:"Played"`
+	PlayCount      int    `json:"PlayCount"`
+	IsFavorite     bool   `json:"IsFavorite"`
+	Rating         int    `json:"Rating"`
+	Played         bool   `json:"Played"`
+	LastPlayedDate string `json:"LastPlayedDate"`
 }
 
 type NameID struct {

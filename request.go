@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -161,6 +163,25 @@ func (c *Client) post(url string, params params, body interface{}) (io.ReadClose
 		return resp.Body, err
 	}
 	return nil, err
+}
+
+func (c *Client) encodeGETUrl(endpoint string, params params) (string, error) {
+	baseUrl, err := url.Parse(c.BaseURL)
+	if err != nil {
+		return "", err
+	}
+	baseUrl.Path = path.Join(baseUrl.Path, endpoint)
+	req, err := http.NewRequest("GET", baseUrl.String(), nil)
+	if err != nil {
+		return "", err
+	}
+
+	q := req.URL.Query()
+	for key, val := range params {
+		q.Add(key, val)
+	}
+	req.URL.RawQuery = q.Encode()
+	return req.URL.String(), nil
 }
 
 // Construct request
