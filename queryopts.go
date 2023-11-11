@@ -47,6 +47,10 @@ type Filter struct {
 	FilterPlayed FilterPlayStatus
 	// Favorite marks items as being starred / favorite.
 	Favorite bool
+	// Include only results from the given artist.
+	ArtistID string
+	// Include only results with the given parentID.
+	ParentID string
 	// Genres contains list of genres to include.
 	Genres []NameID
 	// YearRange contains two elements, items must be within these boundaries.

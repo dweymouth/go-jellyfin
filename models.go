@@ -59,6 +59,7 @@ type songs struct {
 
 type Artist struct {
 	Name         string   `json:"Name"`
+	Overview     string   `json:"Overview"`
 	ID           string   `json:"Id"`
 	RunTimeTicks int64    `json:"RunTimeTicks"`
 	Type         string   `json:"Type"`

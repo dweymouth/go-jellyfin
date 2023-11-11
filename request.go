@@ -75,10 +75,6 @@ func (p params) enableRecursive() {
 	p["Recursive"] = "true"
 }
 
-func (p params) setParentID(id string) {
-	p["ParentId"] = id
-}
-
 func (p params) setFilter(tItem mediaItemType, filter Filter) {
 	f := ""
 	if filter.Favorite {
@@ -121,6 +117,14 @@ func (p params) setFilter(tItem mediaItemType, filter Filter) {
 
 	if f != "" {
 		p["Filters"] = f
+	}
+
+	if filter.ArtistID != "" {
+		p["ArtistIds"] = filter.ArtistID
+	}
+
+	if filter.ParentID != "" {
+		p["ParentId"] = filter.ParentID
 	}
 }
 

@@ -13,6 +13,7 @@ var (
 )
 
 // GetAlbums returns albums with given sort, filter, and paging options.
+// - Can be used to get an artist's discography with ArtistID filter.
 func (c *Client) GetAlbums(opts QueryOpts) ([]*Album, error) {
 	params := c.defaultParams()
 	params.enableRecursive()
@@ -42,20 +43,36 @@ func (c *Client) GetAlbumArtists(opts QueryOpts) ([]*Artist, error) {
 	params.setPaging(opts.Paging)
 	params.setSorting(opts.Sort)
 	resp, err := c.get("/Artists/AlbumArtists", params)
-	if resp != nil {
-		defer resp.Close()
-	}
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Close()
 	return c.parseArtists(resp)
+}
+
+func (c *Client) GetArtist(artistID string) (*Artist, error) {
+	artist := &Artist{}
+	err := c.getItemByID(artistID, artist)
+	if err != nil {
+		return nil, err
+	}
+	return artist, nil
+}
+
+func (c *Client) GetAlbum(albumID string) (*Album, error) {
+	album := &Album{}
+	err := c.getItemByID(albumID, album, albumIncludeFields...)
+	if err != nil {
+		return nil, err
+	}
+	return album, nil
 }
 
 func (c *Client) GetSimilarArtists(artistID string) ([]*Artist, error) {
 	params := c.defaultParams()
 	params.enableRecursive()
-	params.setSorting(Sort{Field: SortByName, Mode: SortAsc})
-	params.setLimit(50)
+	params.setIncludeTypes(mediaTypeArtist)
+	params.setLimit(15)
 	resp, err := c.get(fmt.Sprintf("/Items/%s/Similar", artistID), params)
 	if err != nil {
 		return nil, err
@@ -90,9 +107,13 @@ func (c *Client) GetGenres(paging Paging) ([]NameID, error) {
 	return body.Items, nil
 }
 
+// Get songs matching the given filter criteria with given sorting and paging.
+//   - Can be used to get an album track list with the ParentID filter.
+//   - Can be used to get top songs for an artist with the ArtistId filter
+//     and sorting by CommunityRating descending
 func (c *Client) GetSongs(opts QueryOpts) ([]*Song, error) {
 	params := c.defaultParams()
-	params.setIncludeTypes(mediaTypePlaylist)
+	params.setIncludeTypes(mediaTypeAudio)
 	params.setPaging(opts.Paging)
 	params.setSorting(opts.Sort)
 	params.setFilter(mediaTypeAudio, opts.Filter)
@@ -105,34 +126,7 @@ func (c *Client) GetSongs(opts QueryOpts) ([]*Song, error) {
 	}
 	defer resp.Close()
 
-	songs := songs{}
-	err = json.NewDecoder(resp).Decode(&songs)
-	if err != nil {
-		return nil, fmt.Errorf("decode json: %v", err)
-	}
-	return songs.Songs, nil
-}
-
-func (c *Client) GetTopSongs(artistID string, limit int) ([]*Song, error) {
-	params := c.defaultParams()
-	params.setIncludeTypes(mediaTypeAudio)
-	params.setLimit(limit)
-	params.enableRecursive()
-	params.setSorting(Sort{Field: SortByCommunityRating, Mode: SortDesc})
-	params["artistIds"] = fmt.Sprintf("[%s]", artistID)
-	params.setIncludeFields(songIncludeFields...)
-
-	resp, err := c.get(fmt.Sprintf("/Users/%s/Items", c.userID), params)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Close()
-	songs := songs{}
-	err = json.NewDecoder(resp).Decode(&songs)
-	if err != nil {
-		return nil, fmt.Errorf("decode json: %v", err)
-	}
-	return songs.Songs, nil
+	return c.parseSongs(resp)
 }
 
 // GetPlaylists retrieves all playlists. Each playlists song count is known, but songs must be
@@ -165,6 +159,15 @@ func (c *Client) GetPlaylists() ([]*Playlist, error) {
 	return musicPlaylists, nil
 }
 
+func (c *Client) GetPlaylist(playlistID string) (*Playlist, error) {
+	playlist := &Playlist{}
+	err := c.getItemByID(playlistID, playlist, playlistIncludeFields...)
+	if err != nil {
+		return nil, err
+	}
+	return playlist, nil
+}
+
 func (c *Client) GetSimilarSongs(id string, limit int) ([]*Song, error) {
 	params := c.defaultParams()
 	params.setIncludeFields(songIncludeFields...)
@@ -177,6 +180,22 @@ func (c *Client) GetSimilarSongs(id string, limit int) ([]*Song, error) {
 	defer resp.Close()
 
 	return c.parseSongs(resp)
+}
+
+func (c *Client) getItemByID(itemID string, dto interface{}, includeFields ...string) error {
+	params := c.defaultParams()
+	if len(includeFields) > 0 {
+		params.setIncludeFields(includeFields...)
+	}
+	resp, err := c.get(fmt.Sprintf("/Users/%s/Items/%s", c.userID, itemID), params)
+	if err != nil {
+		return err
+	}
+	defer resp.Close()
+	if err := json.NewDecoder(resp).Decode(dto); err != nil {
+		return fmt.Errorf("parse item: %v", err)
+	}
+	return nil
 }
 
 func (c *Client) parseArtists(resp io.Reader) ([]*Artist, error) {
