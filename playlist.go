@@ -7,7 +7,7 @@ import (
 
 func (c *Client) GetPlaylistSongs(playlistID string) ([]*Song, error) {
 	params := c.defaultParams()
-	params.setIncludeFields("Genres", "DateCreated", "MediaSources", "UserData", "ParentId")
+	params.setIncludeFields(songIncludeFields...)
 
 	resp, err := c.get(fmt.Sprintf("/Playlists/%s/Items", playlistID), params)
 	if err != nil {
@@ -22,4 +22,13 @@ func (c *Client) GetPlaylistSongs(playlistID string) ([]*Song, error) {
 	}
 
 	return c.parseSongs(resp)
+}
+
+func (c *Client) DeletePlaylist(playlistID string) error {
+	resp, err := c.delete(fmt.Sprintf("/Items/%s", playlistID), c.defaultParams())
+	if err != nil {
+		return fmt.Errorf("delete playlist: %v", err)
+	}
+	defer resp.Close()
+	return nil
 }

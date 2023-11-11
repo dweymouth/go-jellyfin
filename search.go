@@ -48,8 +48,8 @@ func (jf *Client) Search(query string, itemType ItemType, limit int) (*SearchRes
 	}
 	params := jf.defaultParams()
 	params.enableRecursive()
+	params.setLimit(limit)
 	params["SearchTerm"] = query
-	params["Limit"] = fmt.Sprint(limit)
 	params["IncludePeople"] = "false"
 	params["IncludeMedia"] = "true"
 
@@ -65,16 +65,17 @@ func (jf *Client) Search(query string, itemType ItemType, limit int) (*SearchRes
 		url = "/Artists"
 	case TypeAlbum:
 		mediaType = mediaTypeAlbum
-		params.setIncludeTypes(mediaTypeAlbum)
+		params.setIncludeFields(albumIncludeFields...)
 	case TypeSong:
 		mediaType = mediaTypeAudio
-		params.setIncludeTypes(mediaTypeAudio)
+		params.setIncludeFields(songIncludeFields...)
 	case TypePlaylist:
 		mediaType = mediaTypePlaylist
-		params.setIncludeTypes(mediaTypePlaylist)
+		params.setIncludeFields(playlistIncludeFields...)
 	default:
 		return nil, fmt.Errorf("itemType %s not supported", itemType)
 	}
+	params.setIncludeTypes(mediaType)
 
 	body, err := jf.get(url, params)
 	if body != nil {

@@ -2,6 +2,7 @@ package jellyfin
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -138,16 +139,36 @@ func (c *Client) get(url string, params params) (io.ReadCloser, error) {
 	return nil, err
 }
 
+func (c *Client) delete(url string, params params) (io.ReadCloser, error) {
+	resp, err := c.makeRequest("DELETE", url, nil, params, nil)
+	if resp != nil {
+		return resp.Body, err
+	}
+	return nil, err
+}
+
+func (c *Client) post(url string, params params, body interface{}) (io.ReadCloser, error) {
+	bodyEnc, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshal POST body: %v", err)
+	}
+	resp, err := c.makeRequest("POST", url, bodyEnc, params, nil)
+	if resp != nil {
+		return resp.Body, err
+	}
+	return nil, err
+}
+
 // Construct request
 // Set authorization header and build url query
 // Make request, parse response code and raise error if needed. Else return response body
-func (c *Client) makeRequest(method, url string, body *[]byte, params params,
+func (c *Client) makeRequest(method, url string, body []byte, params params,
 	headers map[string]string) (*http.Response, error) {
 	var reader *bytes.Buffer
 	var req *http.Request
 	var err error
 	if body != nil {
-		reader = bytes.NewBuffer(*body)
+		reader = bytes.NewBuffer(body)
 		req, err = http.NewRequest(method, c.BaseURL+url, reader)
 	} else {
 		req, err = http.NewRequest(method, c.BaseURL+url, nil)

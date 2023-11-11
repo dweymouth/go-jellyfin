@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strconv"
 )
 
 var (
-	songIncludeFields = []string{"Genres", "DateCreated", "MediaSources", "UserData", "ParentId"}
+	songIncludeFields     = []string{"Genres", "DateCreated", "MediaSources", "UserData", "ParentId"}
+	albumIncludeFields    = []string{"Genres", "DateCreated", "ChildCount", "UserData", "ParentId"}
+	playlistIncludeFields = []string{"Genres", "DateCreated", "MediaSources", "ChildCount", "Parent"}
 )
 
 // GetAlbums returns albums with given sort, filter, and paging options.
@@ -19,7 +20,7 @@ func (c *Client) GetAlbums(opts QueryOpts) ([]*Album, error) {
 	params.setSorting(opts.Sort)
 	params.setFilter(mediaTypeAlbum, opts.Filter)
 	params.setIncludeTypes(mediaTypeAlbum)
-	params.setIncludeFields("Genres", "DateCreated", "ChildCount", "ParentId")
+	params.setIncludeFields(albumIncludeFields...)
 	resp, err := c.get(fmt.Sprintf("/Users/%s/Items", c.userID), params)
 	if err != nil {
 		return nil, err
@@ -140,7 +141,7 @@ func (c *Client) GetPlaylists() ([]*Playlist, error) {
 	params := c.defaultParams()
 	params.setIncludeTypes(mediaTypePlaylist)
 	params.enableRecursive()
-	params.setIncludeFields("Genres", "DateCreated", "MediaSources", "ChildCount", "ParentId")
+	params.setIncludeFields(playlistIncludeFields...)
 
 	resp, err := c.get(fmt.Sprintf("/Users/%s/Items", c.userID), params)
 	if err != nil {
@@ -166,7 +167,8 @@ func (c *Client) GetPlaylists() ([]*Playlist, error) {
 
 func (c *Client) GetSimilarSongs(id string, limit int) ([]*Song, error) {
 	params := c.defaultParams()
-	params["Limit"] = strconv.Itoa(limit)
+	params.setIncludeFields(songIncludeFields...)
+	params.setLimit(limit)
 
 	resp, err := c.get(fmt.Sprintf("/Items/%s/InstantMix", id), params)
 	if err != nil {

@@ -15,7 +15,6 @@ import (
 type Client struct {
 	HTTPClient    *http.Client
 	BaseURL       string
-	User          string
 	ClientName    string
 	ClientVersion string
 
@@ -24,6 +23,15 @@ type Client struct {
 	serverID string
 	userID   string
 	deviceID string
+}
+
+func NewClient(baseURL, clientName, clientVersion string) *Client {
+	return &Client{
+		HTTPClient:    &http.Client{},
+		BaseURL:       baseURL,
+		ClientName:    clientName,
+		ClientVersion: clientVersion,
+	}
 }
 
 type loginResponse struct {
