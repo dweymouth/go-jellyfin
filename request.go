@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type params map[string]string
@@ -63,6 +64,10 @@ func (p params) setLimit(n int) {
 
 func (p params) setIncludeTypes(itemType mediaItemType) {
 	p["IncludeItemTypes"] = string(itemType)
+}
+
+func (p params) setIncludeFields(fields ...string) {
+	p["Fields"] = strings.Join(fields, ",")
 }
 
 func (p params) enableRecursive() {

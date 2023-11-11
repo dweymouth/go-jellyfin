@@ -7,6 +7,10 @@ import (
 	"strconv"
 )
 
+var (
+	songIncludeFields = []string{"Genres", "DateCreated", "MediaSources", "UserData", "ParentId"}
+)
+
 // GetAlbums returns albums with given sort, filter, and paging options.
 func (c *Client) GetAlbums(opts QueryOpts) ([]*Album, error) {
 	params := c.defaultParams()
@@ -15,6 +19,7 @@ func (c *Client) GetAlbums(opts QueryOpts) ([]*Album, error) {
 	params.setSorting(opts.Sort)
 	params.setFilter(mediaTypeAlbum, opts.Filter)
 	params.setIncludeTypes(mediaTypeAlbum)
+	params.setIncludeFields("Genres", "DateCreated", "ChildCount", "ParentId")
 	resp, err := c.get(fmt.Sprintf("/Users/%s/Items", c.userID), params)
 	if err != nil {
 		return nil, err
@@ -84,13 +89,58 @@ func (c *Client) GetGenres(paging Paging) ([]NameID, error) {
 	return body.Items, nil
 }
 
+func (c *Client) GetSongs(opts QueryOpts) ([]*Song, error) {
+	params := c.defaultParams()
+	params.setIncludeTypes(mediaTypePlaylist)
+	params.setPaging(opts.Paging)
+	params.setSorting(opts.Sort)
+	params.setFilter(mediaTypeAudio, opts.Filter)
+	params.enableRecursive()
+	params.setIncludeFields(songIncludeFields...)
+
+	resp, err := c.get(fmt.Sprintf("/Users/%s/Items", c.userID), params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	songs := songs{}
+	err = json.NewDecoder(resp).Decode(&songs)
+	if err != nil {
+		return nil, fmt.Errorf("decode json: %v", err)
+	}
+	return songs.Songs, nil
+}
+
+func (c *Client) GetTopSongs(artistID string, limit int) ([]*Song, error) {
+	params := c.defaultParams()
+	params.setIncludeTypes(mediaTypeAudio)
+	params.setLimit(limit)
+	params.enableRecursive()
+	params.setSorting(Sort{Field: SortByCommunityRating, Mode: SortDesc})
+	params["artistIds"] = fmt.Sprintf("[%s]", artistID)
+	params.setIncludeFields(songIncludeFields...)
+
+	resp, err := c.get(fmt.Sprintf("/Users/%s/Items", c.userID), params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+	songs := songs{}
+	err = json.NewDecoder(resp).Decode(&songs)
+	if err != nil {
+		return nil, fmt.Errorf("decode json: %v", err)
+	}
+	return songs.Songs, nil
+}
+
 // GetPlaylists retrieves all playlists. Each playlists song count is known, but songs must be
 // retrieved separately
 func (c *Client) GetPlaylists() ([]*Playlist, error) {
 	params := c.defaultParams()
 	params.setIncludeTypes(mediaTypePlaylist)
 	params.enableRecursive()
-	params["Fields"] = "ChildCount"
+	params.setIncludeFields("Genres", "DateCreated", "MediaSources", "ChildCount", "ParentId")
 
 	resp, err := c.get(fmt.Sprintf("/Users/%s/Items", c.userID), params)
 	if err != nil {

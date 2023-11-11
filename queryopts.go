@@ -5,14 +5,15 @@ import "time"
 type SortField string
 
 const (
-	SortByName       SortField = "Name"
-	SortByDate       SortField = "Date"
-	SortByArtist     SortField = "Artist"
-	SortByAlbum      SortField = "Album"
-	SortByPlayCount  SortField = "Most played"
-	SortByRandom     SortField = "Random"
-	SortByLatest     SortField = "Latest"
-	SortByLastPlayed SortField = "Last played"
+	SortByName            SortField = "Name"
+	SortByDate            SortField = "Date"
+	SortByArtist          SortField = "Artist"
+	SortByAlbum           SortField = "Album"
+	SortByPlayCount       SortField = "Most played"
+	SortByRandom          SortField = "Random"
+	SortByLatest          SortField = "Latest"
+	SortByLastPlayed      SortField = "Last played"
+	SortByCommunityRating SortField = "CommunityRating"
 )
 
 type SortOrder string
