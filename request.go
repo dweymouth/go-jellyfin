@@ -86,21 +86,22 @@ func (p params) setFilter(tItem mediaItemType, filter Filter) {
 			if totalYears == 0 {
 				years = strconv.Itoa(filter.YearRange[0])
 			} else {
+				var sb strings.Builder
 				for i := 0; i < totalYears+1; i++ {
+					if i > 0 {
+						sb.WriteString(",")
+					}
 					year := filter.YearRange[0] + i
-					years = appendFilter(years, strconv.Itoa(year), ",")
+					sb.WriteString(strconv.Itoa(year))
 				}
+				years = sb.String()
 			}
 			p["Years"] = years
 		}
 	}
 
 	if len(filter.Genres) > 0 {
-		genres := ""
-		for _, v := range filter.Genres {
-			genres = appendFilter(genres, v.Name, "|")
-		}
-		p["Genres"] = genres
+		p["Genres"] = strings.Join(filter.Genres, "|")
 	}
 
 	if f != "" {

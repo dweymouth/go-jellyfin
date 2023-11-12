@@ -51,7 +51,7 @@ type Filter struct {
 	// Include only results with the given parentID.
 	ParentID string
 	// Genres contains list of genres to include.
-	Genres []NameID
+	Genres []string
 	// YearRange contains two elements, items must be within these boundaries.
 	YearRange [2]int
 }
