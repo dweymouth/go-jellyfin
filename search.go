@@ -42,16 +42,13 @@ func searchDtoToItems(rc io.ReadCloser, itemType mediaItemType) (*SearchResult, 
 }
 
 // Search searches audio items
-func (jf *Client) Search(query string, itemType ItemType, limit int) (*SearchResult, error) {
-	if limit == 0 {
-		limit = 40
-	}
+func (jf *Client) Search(query string, itemType ItemType, paging Paging) (*SearchResult, error) {
 	params := jf.defaultParams()
 	params.enableRecursive()
-	params.setLimit(limit)
+	params.setPaging(paging)
 	params["SearchTerm"] = query
-	params["IncludePeople"] = "false"
-	params["IncludeMedia"] = "true"
+	//params["IncludePeople"] = "false"
+	//params["IncludeMedia"] = "true"
 
 	// default search URL
 	url := fmt.Sprintf("/Users/%s/Items", jf.userID)
@@ -60,9 +57,9 @@ func (jf *Client) Search(query string, itemType ItemType, limit int) (*SearchRes
 	switch itemType {
 	case TypeArtist:
 		mediaType = mediaTypeArtist
-		params["IncludeArtists"] = "true"
-		params["IncludeMedia"] = "false"
-		url = "/Artists"
+		//params["IncludeArtists"] = "true"
+		//params["IncludeMedia"] = "false"
+		url = "/Artists/AlbumArtists"
 	case TypeAlbum:
 		mediaType = mediaTypeAlbum
 		params.setIncludeFields(albumIncludeFields...)
