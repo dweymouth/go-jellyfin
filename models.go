@@ -65,8 +65,7 @@ type Artist struct {
 	ID           string   `json:"Id"`
 	RunTimeTicks int64    `json:"RunTimeTicks"`
 	Type         string   `json:"Type"`
-	SongCount    int      `json:"SongCount"`
-	AlbumCount   int      `json:"AlbumCount"`
+	AlbumCount   int      `json:"ChildCount"`
 	UserData     UserData `json:"UserData"`
 	ImageTags    Images   `json:"ImageTags"`
 }

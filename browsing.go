@@ -10,6 +10,7 @@ var (
 	songIncludeFields     = []string{"Genres", "DateCreated", "MediaSources", "UserData", "ParentId"}
 	albumIncludeFields    = []string{"Genres", "DateCreated", "ChildCount", "UserData", "ParentId"}
 	playlistIncludeFields = []string{"Genres", "DateCreated", "MediaSources", "ChildCount", "Parent"}
+	artistIncludeFields   = []string{"ChildCount", "UserData"}
 )
 
 // GetAlbums returns albums with given sort, filter, and paging options.
@@ -42,6 +43,7 @@ func (c *Client) GetAlbumArtists(opts QueryOpts) ([]*Artist, error) {
 	params.setFilter(mediaTypeArtist, opts.Filter)
 	params.setPaging(opts.Paging)
 	params.setSorting(opts.Sort)
+	params.setIncludeFields(artistIncludeFields...)
 	resp, err := c.get("/Artists/AlbumArtists", params)
 	if err != nil {
 		return nil, err
@@ -52,7 +54,8 @@ func (c *Client) GetAlbumArtists(opts QueryOpts) ([]*Artist, error) {
 
 func (c *Client) GetArtist(artistID string) (*Artist, error) {
 	artist := &Artist{}
-	err := c.getItemByID(artistID, artist)
+	includeFields := append(artistIncludeFields, "Overview")
+	err := c.getItemByID(artistID, artist, includeFields...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +64,8 @@ func (c *Client) GetArtist(artistID string) (*Artist, error) {
 
 func (c *Client) GetAlbum(albumID string) (*Album, error) {
 	album := &Album{}
-	err := c.getItemByID(albumID, album, albumIncludeFields...)
+	includeFields := append(albumIncludeFields, "Overview")
+	err := c.getItemByID(albumID, album, includeFields...)
 	if err != nil {
 		return nil, err
 	}
