@@ -86,6 +86,7 @@ type Album struct {
 	Artists      []NameID `json:"AlbumArtists"`
 	Overview     string   `json:"Overview"`
 	Genres       []string `json:"Genres"`
+	ChildCount   int      `json:"ChildCount"`
 	ImageTags    Images   `json:"ImageTags"`
 	UserData     UserData `json:"UserData"`
 }

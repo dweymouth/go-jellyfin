@@ -57,7 +57,9 @@ func (p params) setSorting(sort Sort) {
 }
 
 func (p params) setPaging(paging Paging) {
-	p["Limit"] = strconv.Itoa(paging.Limit)
+	if paging.Limit > 0 {
+		p["Limit"] = strconv.Itoa(paging.Limit)
+	}
 	p["StartIndex"] = strconv.Itoa(paging.StartIndex)
 }
 

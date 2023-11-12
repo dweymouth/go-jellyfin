@@ -5,6 +5,28 @@ import (
 	"fmt"
 )
 
+type createPlaylistBody struct {
+	Name      string   `json:"Name"`
+	Ids       []string `json:"Ids,omitempty"`
+	UserID    string   `json:"UserId"`
+	MediaType string   `json:"MediaType"`
+}
+
+func (c *Client) CreatePlaylist(name string, trackIDs []string) error {
+	body := createPlaylistBody{
+		Name:      name,
+		UserID:    c.userID,
+		MediaType: "Audio",
+		Ids:       trackIDs,
+	}
+	resp, err := c.post("/Playlists", c.defaultParams(), body)
+	if err != nil {
+		return fmt.Errorf("create playlist: %v", err)
+	}
+	resp.Close()
+	return nil
+}
+
 func (c *Client) GetPlaylistSongs(playlistID string) ([]*Song, error) {
 	params := c.defaultParams()
 	params.setIncludeFields(songIncludeFields...)
