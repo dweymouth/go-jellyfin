@@ -2,6 +2,7 @@ package jellyfin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -44,6 +45,10 @@ func (c *Client) GetPlaylistSongs(playlistID string) ([]*Song, error) {
 	}
 
 	return c.parseSongs(resp)
+}
+
+func (c *Client) AddPlaylistTracks(playlistID string, trackIDs []string) error {
+	return errors.New("not implemented")
 }
 
 func (c *Client) DeletePlaylist(playlistID string) error {

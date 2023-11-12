@@ -32,24 +32,8 @@ func (p params) setSorting(sort Sort) {
 		order = "Descending"
 	}
 
-	switch sort.Field {
-	case SortByDate:
-		field = "ProductionYear,ProductionYear,SortName"
-	case SortByName:
-		field = "SortName"
-		// Todo: following depend on item type
-	case SortByAlbum:
-		field = "Album,SortName"
-	case SortByArtist:
-		field = "Artist,SortName"
-	case SortByPlayCount:
-		field = "PlayCount,SortName"
-	case SortByRandom:
-		field = "Random,SortName"
-	case SortByLatest:
-		field = "DateCreated,SortName"
-	case SortByLastPlayed:
-		field = "DatePlayed,SortName"
+	if sort.Field != "" {
+		field = string(sort.Field)
 	}
 
 	p["SortBy"] = field
