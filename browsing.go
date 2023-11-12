@@ -68,6 +68,15 @@ func (c *Client) GetAlbum(albumID string) (*Album, error) {
 	return album, nil
 }
 
+func (c *Client) GetSong(songID string) (*Song, error) {
+	song := &Song{}
+	err := c.getItemByID(songID, song, songIncludeFields...)
+	if err != nil {
+		return nil, err
+	}
+	return song, nil
+}
+
 func (c *Client) GetSimilarArtists(artistID string) ([]*Artist, error) {
 	params := c.defaultParams()
 	params.enableRecursive()
