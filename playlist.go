@@ -41,15 +41,30 @@ func (c *Client) GetPlaylistSongs(playlistID string) ([]*Song, error) {
 }
 
 type updatePlaylistBody struct {
-	Name     string `json:"Name"`
-	Overview string `json:"Overview"`
+	Name         string            `json:"Name"`
+	Overview     string            `json:"Overview"`
+	DateCreated  string            `json:"DateCreated"`
+	Genres       []string          `json:"Genres"`
+	PremiereDate string            `json:"PremiereDate"`
+	ProviderIds  map[string]string `json:"ProviderIds"`
+	Tags         []string          `json:"Tags"`
 }
 
 func (c *Client) UpdatePlaylistMetadata(playlistID, name, overview string) error {
+	pl, err := c.GetPlaylist(playlistID)
+	if err != nil {
+		return err
+	}
+
 	params := c.defaultParams()
 	body := updatePlaylistBody{
-		Name:     name,
-		Overview: overview,
+		Name:         name,
+		Overview:     overview,
+		DateCreated:  pl.DateCreated,  // Required
+		Genres:       pl.Genres,       // Required
+		PremiereDate: pl.PremiereDate, // Required
+		Tags:         pl.Tags,         // Required
+		ProviderIds:  pl.ProviderIds,  // Required
 	}
 	resp, err := c.post(fmt.Sprintf("/Items/%s", playlistID), params, body)
 	if err != nil {

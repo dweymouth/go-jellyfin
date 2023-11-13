@@ -174,7 +174,8 @@ func (c *Client) GetPlaylists() ([]*Playlist, error) {
 
 func (c *Client) GetPlaylist(playlistID string) (*Playlist, error) {
 	playlist := &Playlist{}
-	err := c.getItemByID(playlistID, playlist, playlistIncludeFields...)
+	includeFields := append(playlistIncludeFields, "PremiereDate", "Tags", "Overview", "ProviderIds")
+	err := c.getItemByID(playlistID, playlist, includeFields...)
 	if err != nil {
 		return nil, err
 	}

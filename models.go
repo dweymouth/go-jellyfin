@@ -96,17 +96,20 @@ type albums struct {
 }
 
 type Playlist struct {
-	Name               string   `json:"Name"`
-	ID                 string   `json:"Id"`
-	Overview           string   `json:"Overview"`
-	DateCreated        string   `json:"DateCreated"`
-	DateLastMediaAdded string   `json:"DateLastMediaAdded"`
-	Genres             []string `json:"Genres"`
-	RunTimeTicks       int64    `json:"RunTimeTicks"`
-	Type               string   `json:"Type"`
-	MediaType          string   `json:"MediaType"`
-	ImageTags          Images   `json:"ImageTags"`
-	SongCount          int      `json:"ChildCount"`
+	Name               string            `json:"Name"`
+	ID                 string            `json:"Id"`
+	Overview           string            `json:"Overview"`
+	DateCreated        string            `json:"DateCreated"`
+	PremiereDate       string            `json:"PremiereDate"`
+	DateLastMediaAdded string            `json:"DateLastMediaAdded"`
+	Genres             []string          `json:"Genres"`
+	RunTimeTicks       int64             `json:"RunTimeTicks"`
+	Type               string            `json:"Type"`
+	MediaType          string            `json:"MediaType"`
+	ImageTags          Images            `json:"ImageTags"`
+	Tags               []string          `json:"Tags"`
+	ProviderIds        map[string]string `json:"ProviderIds"`
+	SongCount          int               `json:"ChildCount"`
 }
 
 type playlists struct {
