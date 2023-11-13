@@ -47,19 +47,12 @@ func (jf *Client) Search(query string, itemType ItemType, paging Paging) (*Searc
 	params.enableRecursive()
 	params.setPaging(paging)
 	params["SearchTerm"] = query
-	//params["IncludePeople"] = "false"
-	//params["IncludeMedia"] = "true"
-
-	// default search URL
-	url := fmt.Sprintf("/Users/%s/Items", jf.userID)
 
 	var mediaType mediaItemType
 	switch itemType {
 	case TypeArtist:
 		mediaType = mediaTypeArtist
-		//params["IncludeArtists"] = "true"
-		//params["IncludeMedia"] = "false"
-		url = "/Artists/AlbumArtists"
+		params.setIncludeFields(artistIncludeFields...)
 	case TypeAlbum:
 		mediaType = mediaTypeAlbum
 		params.setIncludeFields(albumIncludeFields...)
@@ -74,7 +67,7 @@ func (jf *Client) Search(query string, itemType ItemType, paging Paging) (*Searc
 	}
 	params.setIncludeTypes(mediaType)
 
-	body, err := jf.get(url, params)
+	body, err := jf.get(fmt.Sprintf("/Users/%s/Items", jf.userID), params)
 	if body != nil {
 		defer body.Close()
 	}
