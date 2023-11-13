@@ -21,6 +21,7 @@ type Client struct {
 	loggedIn bool
 	token    string
 	serverID string
+	username string
 	userID   string
 	deviceID string
 }
@@ -80,6 +81,7 @@ func (c *Client) Login(username, password string) error {
 
 		c.token = dto.Token
 		c.serverID = dto.ServerId
+		c.username = username
 		c.userID = dto.User.UserId
 		c.loggedIn = true
 	case http.StatusBadRequest:
@@ -122,17 +124,14 @@ func (c *Client) Ping() (*PingResponse, error) {
 		return nil, fmt.Errorf("invalid json response: %v", err)
 	}
 
-	//logrus.Debugf("Connect to server %s, (id %s)", res.ServerName, res.Id)
 	return res, nil
 }
 
-func (c *Client) authHeader() string {
-	//id, err := machineid.ProtectedID(config.AppName)
-	//if err != nil {
-	//logrus.Errorf("get unique host id: %v", err)
-	//	id = util.RandomKey(30)
-	//}
+func (c *Client) LoggedInUser() string {
+	return c.username
+}
 
+func (c *Client) authHeader() string {
 	auth := fmt.Sprintf("MediaBrowser Client=\"%s\", Device=\"%s\", DeviceId=\"%s\", Version=\"%s\"",
 		c.ClientName, deviceName(), randomKey(30), c.ClientVersion)
 	return auth
