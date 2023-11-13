@@ -222,7 +222,7 @@ func (c *Client) parseArtists(resp io.Reader) ([]*Artist, error) {
 func (c *Client) parseSongs(resp io.Reader) ([]*Song, error) {
 	songs := songs{}
 	if err := json.NewDecoder(resp).Decode(&songs); err != nil {
-		return nil, fmt.Errorf("parse similar songs: %v", err)
+		return nil, fmt.Errorf("parse songs: %v", err)
 	}
 	return songs.Songs, nil
 }

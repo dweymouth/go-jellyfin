@@ -1,7 +1,6 @@
 package jellyfin
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -37,12 +36,6 @@ func (c *Client) GetPlaylistSongs(playlistID string) ([]*Song, error) {
 		return nil, fmt.Errorf("get playlist songs: %v", err)
 	}
 	defer resp.Close()
-
-	dto := songs{}
-	err = json.NewDecoder(resp).Decode(&dto)
-	if err != nil {
-		return nil, fmt.Errorf("decode playlist songs: %v", err)
-	}
 
 	return c.parseSongs(resp)
 }
