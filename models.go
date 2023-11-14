@@ -40,6 +40,7 @@ type MediaSource struct {
 type Song struct {
 	Name           string        `json:"Name"`
 	Id             string        `json:"Id"`
+	PlaylistItemId string        `json:"PlaylistItemId"`
 	RunTimeTicks   int64         `json:"RunTimeTicks"`
 	ProductionYear int           `json:"ProductionYear"`
 	DateCreated    string        `json:"DateCreated"`

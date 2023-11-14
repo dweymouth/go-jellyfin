@@ -85,9 +85,18 @@ func (c *Client) AddSongsToPlaylist(playlistID string, trackIDs []string) error 
 	return nil
 }
 
-func (c *Client) RemoveSongsFromPlaylist(playlistID string, trackIDs []string) error {
+func (c *Client) RemoveSongsFromPlaylist(playlistID string, trackIndexes []int) error {
+	songs, err := c.GetPlaylistSongs(playlistID)
+	if err != nil {
+		return err
+	}
+	playlistItemIds := make([]string, 0, len(songs))
+	for _, song := range songs {
+		playlistItemIds = append(playlistItemIds, song.PlaylistItemId)
+	}
+
 	params := c.defaultParams()
-	params["entryIds"] = strings.Join(trackIDs, ",")
+	params["entryIds"] = strings.Join(playlistItemIds, ",")
 	resp, err := c.delete(fmt.Sprintf("/Playlists/%s/Items", playlistID), params)
 	if err != nil {
 		return fmt.Errorf("remove songs from playlist: %v", err)
