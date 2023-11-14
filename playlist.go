@@ -85,18 +85,20 @@ func (c *Client) AddSongsToPlaylist(playlistID string, trackIDs []string) error 
 	return nil
 }
 
-func (c *Client) RemoveSongsFromPlaylist(playlistID string, trackIndexes []int) error {
+func (c *Client) RemoveSongsFromPlaylist(playlistID string, removeIndexes []int) error {
 	songs, err := c.GetPlaylistSongs(playlistID)
 	if err != nil {
 		return err
 	}
-	playlistItemIds := make([]string, 0, len(songs))
-	for _, song := range songs {
-		playlistItemIds = append(playlistItemIds, song.PlaylistItemId)
+	removeItemIds := make([]string, 0, len(removeIndexes))
+	for _, idx := range removeIndexes {
+		if idx < len(songs) {
+			removeItemIds = append(removeItemIds, songs[idx].PlaylistItemId)
+		}
 	}
 
 	params := c.defaultParams()
-	params["entryIds"] = strings.Join(playlistItemIds, ",")
+	params["entryIds"] = strings.Join(removeItemIds, ",")
 	resp, err := c.delete(fmt.Sprintf("/Playlists/%s/Items", playlistID), params)
 	if err != nil {
 		return fmt.Errorf("remove songs from playlist: %v", err)
@@ -123,4 +125,13 @@ func (c *Client) DeletePlaylist(playlistID string) error {
 	}
 	defer resp.Close()
 	return nil
+}
+
+func contains(slice []int, i int) bool {
+	for _, x := range slice {
+		if x == i {
+			return true
+		}
+	}
+	return false
 }
