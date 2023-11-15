@@ -2,10 +2,13 @@ package jellyfin
 
 import (
 	"bytes"
+	"crypto/md5"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -23,7 +26,7 @@ type Client struct {
 	serverID string
 	username string
 	userID   string
-	deviceID string
+	deviceID string // needs to be unique for a user+device combo
 }
 
 func NewClient(baseURL, clientName, clientVersion string) *Client {
@@ -83,6 +86,7 @@ func (c *Client) Login(username, password string) error {
 		c.serverID = dto.ServerId
 		c.username = username
 		c.userID = dto.User.UserId
+		c.deviceID = "" // recalculate it next request, should be different per username
 		c.loggedIn = true
 	case http.StatusBadRequest:
 		reason, err := io.ReadAll(resp.Body)
@@ -133,13 +137,17 @@ func (c *Client) LoggedInUser() string {
 
 func (c *Client) authHeader() string {
 	auth := fmt.Sprintf("MediaBrowser Client=\"%s\", Device=\"%s\", DeviceId=\"%s\", Version=\"%s\"",
-		c.ClientName, deviceName(), randomKey(30), c.ClientVersion)
+		c.ClientName, deviceName(), c.ensureDeviceID(), c.ClientVersion)
 	return auth
 }
 
 func (c *Client) ensureDeviceID() string {
 	if c.deviceID == "" {
-		c.deviceID = deviceName()
+		mac, err := macaddress()
+		if err != nil {
+			mac = randomKey(16)
+		}
+		c.deviceID = fmt.Sprintf("%x", md5.Sum([]byte(mac+c.username)))
 	}
 	return c.deviceID
 }
@@ -168,4 +176,34 @@ func randomKey(length int) string {
 		data[i] = letters[b%byte(len(letters))]
 	}
 	return string(data)
+}
+
+// adapted from https://gist.github.com/tsilvers/085c5f39430ced605d970094edf167ba
+func macaddress() (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", errors.New("failed to get net interfaces")
+	}
+
+	for _, i := range interfaces {
+		if i.Flags&net.FlagUp != 0 && !bytes.Equal(i.HardwareAddr, nil) {
+			// Skip locally administered addresses
+			if i.HardwareAddr[0]&2 == 2 {
+				continue
+			}
+
+			var mac uint64
+			for j, b := range i.HardwareAddr {
+				if j >= 8 {
+					break
+				}
+				mac <<= 8
+				mac += uint64(b)
+			}
+
+			return fmt.Sprintf("%16.16X", mac), nil
+		}
+	}
+
+	return "", errors.New("no mac address found")
 }
