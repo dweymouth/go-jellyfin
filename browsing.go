@@ -9,7 +9,7 @@ import (
 var (
 	songIncludeFields     = []string{"Genres", "DateCreated", "MediaSources", "UserData", "ParentId"}
 	albumIncludeFields    = []string{"Genres", "DateCreated", "ChildCount", "UserData", "ParentId"}
-	playlistIncludeFields = []string{"Genres", "DateCreated", "MediaSources", "ChildCount", "Parent"}
+	playlistIncludeFields = []string{"Genres", "DateCreated", "MediaSources", "ChildCount", "Parent", "Overview"}
 	artistIncludeFields   = []string{"ChildCount", "UserData"}
 )
 
@@ -174,7 +174,7 @@ func (c *Client) GetPlaylists() ([]*Playlist, error) {
 
 func (c *Client) GetPlaylist(playlistID string) (*Playlist, error) {
 	playlist := &Playlist{}
-	includeFields := append(playlistIncludeFields, "PremiereDate", "Tags", "Overview", "ProviderIds")
+	includeFields := append(playlistIncludeFields, "PremiereDate", "Tags", "ProviderIds")
 	err := c.getItemByID(playlistID, playlist, includeFields...)
 	if err != nil {
 		return nil, err
