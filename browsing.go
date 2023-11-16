@@ -182,14 +182,21 @@ func (c *Client) GetPlaylist(playlistID string) (*Playlist, error) {
 	return playlist, nil
 }
 
-func (c *Client) GetSimilarSongs(id string, limit int) ([]*Song, error) {
+func (c *Client) GetInstantMix(id string, idType ItemType, limit int) ([]*Song, error) {
+	path := "/Items/%s/InstantMix"
+	switch idType {
+	case TypeArtist:
+		path = "/Artists/%s/InstantMix"
+	case TypeAlbum:
+		path = "/Albums/%s/InstantMix"
+	}
+
 	params := c.defaultParams()
 	params.setIncludeFields(songIncludeFields...)
 	params.setLimit(limit)
-
-	resp, err := c.get(fmt.Sprintf("/Items/%s/InstantMix", id), params)
+	resp, err := c.get(fmt.Sprintf(path, id), params)
 	if err != nil {
-		return nil, fmt.Errorf("get similar songs: %v", err)
+		return nil, fmt.Errorf("get instant mix: %v", err)
 	}
 	defer resp.Close()
 
