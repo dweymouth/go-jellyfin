@@ -126,12 +126,3 @@ func (c *Client) DeletePlaylist(playlistID string) error {
 	defer resp.Close()
 	return nil
 }
-
-func contains(slice []int, i int) bool {
-	for _, x := range slice {
-		if x == i {
-			return true
-		}
-	}
-	return false
-}
