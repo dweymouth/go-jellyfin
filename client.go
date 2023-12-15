@@ -2,6 +2,7 @@ package jellyfin
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/json"
@@ -12,6 +13,11 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"time"
+)
+
+const (
+	DefaultTimeOut = 30 * time.Second
 )
 
 // Client is the root struct for all Jellyfin API calls
@@ -31,7 +37,9 @@ type Client struct {
 
 func NewClient(baseURL, clientName, clientVersion string) *Client {
 	return &Client{
-		HTTPClient:    &http.Client{},
+		HTTPClient: &http.Client{
+			Timeout: DefaultTimeOut,
+		},
 		BaseURL:       baseURL,
 		ClientName:    clientName,
 		ClientVersion: clientVersion,
@@ -50,26 +58,30 @@ type userResponse struct {
 	UserId   string `json:"Id"`
 }
 
-func (c *Client) Login(username, password string) error {
-	body := map[string]string{}
-	body["Username"] = username
-	body["PW"] = password
-
-	b := &bytes.Buffer{}
-	_ = json.NewEncoder(b).Encode(body)
-
-	auth := c.authHeader()
-	req, err := http.NewRequest("POST", c.BaseURL+"/Users/authenticatebyname", b)
-	if err != nil {
-		return fmt.Errorf("failed to login: %v", err)
+// Login logs a user into the server provided in Client.
+// If the login is successful, the access token is stored for future API calls.
+func (c *Client) Login(ctx context.Context, username, password string) error {
+	body := map[string]string{
+		"Username": username,
+		"PW":       password,
 	}
 
-	req.Header.Set("X-Emby-Authorization", auth)
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/Users/authenticatebyname", c.BaseURL), io.NopCloser(bytes.NewBuffer(bodyBytes)))
+	if err != nil {
+		return fmt.Errorf("failed to login: %w", err)
+	}
+
+	req.Header.Set("X-Emby-Authorization", c.authHeader())
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to login: %v", err)
+		return fmt.Errorf("failed to login: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -79,7 +91,7 @@ func (c *Client) Login(username, password string) error {
 		dto := loginResponse{}
 		err := json.NewDecoder(resp.Body).Decode(&dto)
 		if err != nil {
-			return fmt.Errorf("invalid login response: %v", err)
+			return fmt.Errorf("invalid login response: %w", err)
 		}
 
 		c.token = dto.Token
@@ -87,18 +99,17 @@ func (c *Client) Login(username, password string) error {
 		c.username = username
 		c.userID = dto.User.UserId
 		c.deviceID = "" // recalculate it next request, should be different per username
-		c.loggedIn = true
 	case http.StatusBadRequest:
 		reason, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("login failed: %v", err)
+			return fmt.Errorf("login failed: %w", err)
 		} else {
 			return fmt.Errorf("login failed: %s", reason)
 		}
 	default:
 		reason, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("login failed: %v", err)
+			return fmt.Errorf("login failed: %w", err)
 		} else {
 			return fmt.Errorf("login failed: %s", reason)
 		}
