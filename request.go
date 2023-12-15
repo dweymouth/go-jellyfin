@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"path"
 	"strconv"
 	"strings"
@@ -153,10 +152,7 @@ func (c *Client) post(url string, params params, body interface{}) (io.ReadClose
 }
 
 func (c *Client) encodeGETUrl(endpoint string, params params) (string, error) {
-	baseUrl, err := url.Parse(c.BaseURL)
-	if err != nil {
-		return "", err
-	}
+	baseUrl := c.BaseURL()
 	baseUrl.Path = path.Join(baseUrl.Path, endpoint)
 	req, err := http.NewRequest("GET", baseUrl.String(), nil)
 	if err != nil {
@@ -174,16 +170,15 @@ func (c *Client) encodeGETUrl(endpoint string, params params) (string, error) {
 // Construct request
 // Set authorization header and build url query
 // Make request, parse response code and raise error if needed. Else return response body
-func (c *Client) makeRequest(method, url string, body []byte, params params,
-	headers map[string]string) (*http.Response, error) {
+func (c *Client) makeRequest(method, url string, body []byte, params params, headers map[string]string) (*http.Response, error) {
 	var reader *bytes.Buffer
 	var req *http.Request
 	var err error
 	if body != nil {
 		reader = bytes.NewBuffer(body)
-		req, err = http.NewRequest(method, c.BaseURL+url, reader)
+		req, err = http.NewRequest(method, fmt.Sprintf("%s%s", c.BaseURL(), url), reader)
 	} else {
-		req, err = http.NewRequest(method, c.BaseURL+url, nil)
+		req, err = http.NewRequest(method, fmt.Sprintf("%s%s", c.BaseURL(), url), nil)
 	}
 
 	if err != nil {

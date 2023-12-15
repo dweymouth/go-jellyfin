@@ -11,8 +11,10 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -23,7 +25,7 @@ const (
 // Client is the root struct for all Jellyfin API calls
 type Client struct {
 	HTTPClient    *http.Client
-	BaseURL       string
+	baseURL       *url.URL
 	ClientName    string
 	ClientVersion string
 
@@ -35,15 +37,31 @@ type Client struct {
 	deviceID string // needs to be unique for a user+device combo
 }
 
-func NewClient(baseURL, clientName, clientVersion string) *Client {
+func NewClient(urlStr, clientName, clientVersion string) (*Client, error) {
+	// validate the baseurl
+	if !strings.HasSuffix(urlStr, "/") {
+		urlStr += "/"
+	}
+
+	baseURL, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
 		HTTPClient: &http.Client{
 			Timeout: DefaultTimeOut,
 		},
-		BaseURL:       baseURL,
+		baseURL:       baseURL,
 		ClientName:    clientName,
 		ClientVersion: clientVersion,
-	}
+	}, nil
+}
+
+// BaseURL return a copy of the baseURL.
+func (c *Client) BaseURL() *url.URL {
+	u := *c.baseURL
+	return &u
 }
 
 type loginResponse struct {
@@ -58,7 +76,7 @@ type userResponse struct {
 	UserId   string `json:"Id"`
 }
 
-// Login logs a user into the server provided in Client.
+// Login authenticates a user into the server provided in Client.
 // If the login is successful, the access token is stored for future API calls.
 func (c *Client) Login(ctx context.Context, username, password string) error {
 	body := map[string]string{
@@ -71,7 +89,7 @@ func (c *Client) Login(ctx context.Context, username, password string) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/Users/authenticatebyname", c.BaseURL), io.NopCloser(bytes.NewBuffer(bodyBytes)))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/Users/authenticatebyname", c.BaseURL()), io.NopCloser(bytes.NewBuffer(bodyBytes)))
 	if err != nil {
 		return fmt.Errorf("failed to login: %w", err)
 	}
