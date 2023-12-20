@@ -28,10 +28,7 @@ func main() {
     }
 
     // login. Saves the access key to Client for future calls.
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
-
-    if err := jellyClient.Login(ctx, "user", "pass"); err != nil {
+    if err := jellyClient.Login("user", "pass"); err != nil {
         log.Fatalf("unable to log in to jellyfin: %v", err)
     }
 
