@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -139,7 +139,7 @@ func (c *Client) delete(url string, params params) (io.ReadCloser, error) {
 	return nil, err
 }
 
-func (c *Client) post(url string, params params, body interface{}) (io.ReadCloser, error) {
+func (c *Client) post(url string, params params, body any) (io.ReadCloser, error) {
 	bodyEnc, err := json.Marshal(body)
 	if err != nil {
 		return nil, fmt.Errorf("marshal POST body: %v", err)
@@ -152,29 +152,36 @@ func (c *Client) post(url string, params params, body interface{}) (io.ReadClose
 }
 
 func (c *Client) encodeGETUrl(endpoint string, params params) (string, error) {
-	baseUrl := c.BaseURL()
-	baseUrl.Path = path.Join(baseUrl.Path, endpoint)
-	req, err := http.NewRequest(http.MethodGet, baseUrl.String(), nil)
+	u, err := url.JoinPath(c.BaseURL().String(), endpoint)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse url path: %w", err)
+	}
+
+	uri, err := url.Parse(u)
 	if err != nil {
 		return "", err
 	}
 
-	q := req.URL.Query()
+	q := url.Values{}
 	for key, val := range params {
 		q.Add(key, val)
 	}
-	req.URL.RawQuery = q.Encode()
-	return req.URL.String(), nil
+
+	uri.RawQuery = q.Encode()
+	return uri.String(), nil
 }
 
 // makeDo constructs request and performs Do.
 // Set authorization header and build url query.
 // Make request, parse response code and raise error if needed. Else return response body
-func (c *Client) makeDo(method, url string, body []byte, params params, headers map[string]string) (*http.Response, error) {
+func (c *Client) makeDo(method, path string, body []byte, params params, headers map[string]string) (*http.Response, error) {
 	var req *http.Request
 	var err error
 
-	u := fmt.Sprintf("%s%s", c.BaseURL(), url)
+	u, err := url.JoinPath(c.BaseURL().String(), path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse url path: %w", err)
+	}
 
 	// generate http.Request
 	if body != nil {
