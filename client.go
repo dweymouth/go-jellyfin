@@ -88,17 +88,17 @@ func (c *Client) Login(username, password string) error {
 		"PW":       password,
 	}
 
-	bodyBytes, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-
 	u, err := url.JoinPath(c.BaseURL().String(), "/Users/authenticatebyname")
 	if err != nil {
 		return fmt.Errorf("unable to parse url path: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, u, io.NopCloser(bytes.NewBuffer(bodyBytes)))
+	b := &bytes.Buffer{}
+	if err := json.NewEncoder(b).Encode(body); err != nil {
+		return fmt.Errorf("unable to encode body: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, u, b)
 	if err != nil {
 		return fmt.Errorf("failed to login: %w", err)
 	}
