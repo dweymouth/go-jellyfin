@@ -79,7 +79,7 @@ type userResponse struct {
 
 // Login authenticates a user into the server provided in Client.
 // If the login is successful, the access token is stored for future API calls.
-func (c *Client) Login(ctx context.Context, username, password string) error {
+func (c *Client) Login(username, password string) error {
 	body := map[string]string{
 		"Username": username,
 		"PW":       password,
@@ -90,7 +90,7 @@ func (c *Client) Login(ctx context.Context, username, password string) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/Users/authenticatebyname", c.BaseURL()), io.NopCloser(bytes.NewBuffer(bodyBytes)))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, fmt.Sprintf("%s/Users/authenticatebyname", c.BaseURL()), io.NopCloser(bytes.NewBuffer(bodyBytes)))
 	if err != nil {
 		return fmt.Errorf("failed to login: %w", err)
 	}
