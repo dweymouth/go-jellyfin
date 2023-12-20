@@ -93,7 +93,12 @@ func (c *Client) Login(username, password string) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, fmt.Sprintf("%s/Users/authenticatebyname", c.BaseURL()), io.NopCloser(bytes.NewBuffer(bodyBytes)))
+	u, err := url.JoinPath(c.BaseURL().String(), "/Users/authenticatebyname")
+	if err != nil {
+		return fmt.Errorf("unable to parse url path: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, u, io.NopCloser(bytes.NewBuffer(bodyBytes)))
 	if err != nil {
 		return fmt.Errorf("failed to login: %w", err)
 	}
