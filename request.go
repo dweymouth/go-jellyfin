@@ -124,7 +124,7 @@ func appendFilter(old, new string, separator string) string {
 }
 
 func (c *Client) get(url string, params params) (io.ReadCloser, error) {
-	resp, err := c.makeRequest("GET", url, nil, params, nil)
+	resp, err := c.makeRequest(http.MethodGet, url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -132,7 +132,7 @@ func (c *Client) get(url string, params params) (io.ReadCloser, error) {
 }
 
 func (c *Client) delete(url string, params params) (io.ReadCloser, error) {
-	resp, err := c.makeRequest("DELETE", url, nil, params, nil)
+	resp, err := c.makeRequest(http.MethodDelete, url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -144,7 +144,7 @@ func (c *Client) post(url string, params params, body interface{}) (io.ReadClose
 	if err != nil {
 		return nil, fmt.Errorf("marshal POST body: %v", err)
 	}
-	resp, err := c.makeRequest("POST", url, bodyEnc, params, nil)
+	resp, err := c.makeRequest(http.MethodPost, url, bodyEnc, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -154,7 +154,7 @@ func (c *Client) post(url string, params params, body interface{}) (io.ReadClose
 func (c *Client) encodeGETUrl(endpoint string, params params) (string, error) {
 	baseUrl := c.BaseURL()
 	baseUrl.Path = path.Join(baseUrl.Path, endpoint)
-	req, err := http.NewRequest("GET", baseUrl.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, baseUrl.String(), nil)
 	if err != nil {
 		return "", err
 	}
@@ -184,7 +184,7 @@ func (c *Client) makeRequest(method, url string, body []byte, params params, hea
 	if err != nil {
 		return &http.Response{}, fmt.Errorf("failed to make request: %v", err)
 	}
-	if method == "POST" {
+	if method == http.MethodPost {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("X-Emby-Token", c.token)
@@ -210,7 +210,7 @@ func (c *Client) makeRequest(method, url string, body []byte, params params, hea
 	//took := time.Since(start)
 	//logrus.Debugf("%s %s: %d (%d ms)", req.Method, req.URL.Path, resp.StatusCode, took.Milliseconds())
 
-	if resp.StatusCode == 200 || resp.StatusCode == 204 {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
 		return resp, nil
 	}
 	bytes, _ := io.ReadAll(resp.Body)
@@ -220,15 +220,15 @@ func (c *Client) makeRequest(method, url string, body []byte, params params, hea
 	}
 	var errMsg string
 	switch resp.StatusCode {
-	case 400:
+	case http.StatusBadRequest:
 		errMsg = errInvalidRequest
-	case 401:
+	case http.StatusUnauthorized:
 		errMsg = errUnauthorized
-	case 403:
+	case http.StatusForbidden:
 		errMsg = errForbidden
-	case 404:
+	case http.StatusNotFound:
 		errMsg = errNotFound
-	case 500:
+	case http.StatusInternalServerError:
 		errMsg = errServerError
 	default:
 		errMsg = errUnexpectedStatusCode
