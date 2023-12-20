@@ -37,6 +37,7 @@ type Client struct {
 	deviceID string // needs to be unique for a user+device combo
 }
 
+// NewClient creates a jellyfin Client using the url provided.
 func NewClient(urlStr, clientName, clientVersion string) (*Client, error) {
 	// validate the baseurl
 	if !strings.HasSuffix(urlStr, "/") {
