@@ -145,6 +145,8 @@ type PingResponse struct {
 	Id              string
 }
 
+// Ping queries the jellyfin server for a response.
+// Return is some basic information about the jellyfin server.
 func (c *Client) Ping() (*PingResponse, error) {
 	body, err := c.get("/System/Info/Public", nil)
 	if err != nil {
@@ -161,6 +163,7 @@ func (c *Client) Ping() (*PingResponse, error) {
 	return res, nil
 }
 
+// LoggedInUser returns the user associated with this Client.
 func (c *Client) LoggedInUser() string {
 	return c.username
 }
