@@ -17,6 +17,7 @@ This library is functional, and currently in use in Supersonic. However, it is c
 import (
     "github.com/dweymouth/go-jellyfin"
     "log"
+    "context"
 )
 
 func main() {
