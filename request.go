@@ -2,12 +2,12 @@ package jellyfin
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"path"
 	"strconv"
 	"strings"
 )
@@ -125,7 +125,7 @@ func appendFilter(old, new string, separator string) string {
 }
 
 func (c *Client) get(url string, params params) (io.ReadCloser, error) {
-	resp, err := c.makeRequest("GET", url, nil, params, nil)
+	resp, err := c.makeDo(context.Background(), http.MethodGet, url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -133,19 +133,19 @@ func (c *Client) get(url string, params params) (io.ReadCloser, error) {
 }
 
 func (c *Client) delete(url string, params params) (io.ReadCloser, error) {
-	resp, err := c.makeRequest("DELETE", url, nil, params, nil)
+	resp, err := c.makeDo(context.Background(), http.MethodDelete, url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
 	return nil, err
 }
 
-func (c *Client) post(url string, params params, body interface{}) (io.ReadCloser, error) {
+func (c *Client) post(url string, params params, body any) (io.ReadCloser, error) {
 	bodyEnc, err := json.Marshal(body)
 	if err != nil {
 		return nil, fmt.Errorf("marshal POST body: %v", err)
 	}
-	resp, err := c.makeRequest("POST", url, bodyEnc, params, nil)
+	resp, err := c.makeDo(context.Background(), http.MethodPost, url, bodyEnc, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -153,53 +153,57 @@ func (c *Client) post(url string, params params, body interface{}) (io.ReadClose
 }
 
 func (c *Client) encodeGETUrl(endpoint string, params params) (string, error) {
-	baseUrl, err := url.Parse(c.BaseURL)
+	u, err := url.JoinPath(c.BaseURL().String(), endpoint)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to parse url path: %w", err)
 	}
-	baseUrl.Path = path.Join(baseUrl.Path, endpoint)
-	req, err := http.NewRequest("GET", baseUrl.String(), nil)
+
+	uri, err := url.Parse(u)
 	if err != nil {
 		return "", err
 	}
 
-	q := req.URL.Query()
+	q := url.Values{}
 	for key, val := range params {
 		q.Add(key, val)
 	}
-	req.URL.RawQuery = q.Encode()
-	return req.URL.String(), nil
+
+	uri.RawQuery = q.Encode()
+	return uri.String(), nil
 }
 
-// Construct request
-// Set authorization header and build url query
+// makeDo constructs request and performs Do.
+// Set authorization header and build url query.
 // Make request, parse response code and raise error if needed. Else return response body
-func (c *Client) makeRequest(method, url string, body []byte, params params,
-	headers map[string]string) (*http.Response, error) {
-	var reader *bytes.Buffer
+func (c *Client) makeDo(ctx context.Context, method, path string, body []byte, params params, headers map[string]string) (*http.Response, error) {
 	var req *http.Request
 	var err error
-	if body != nil {
-		reader = bytes.NewBuffer(body)
-		req, err = http.NewRequest(method, c.BaseURL+url, reader)
-	} else {
-		req, err = http.NewRequest(method, c.BaseURL+url, nil)
+
+	u, err := url.JoinPath(c.BaseURL().String(), path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse url path: %w", err)
 	}
 
-	if err != nil {
-		return &http.Response{}, fmt.Errorf("failed to make request: %v", err)
+	// generate http.Request
+	if body != nil {
+		req, err = http.NewRequestWithContext(ctx, method, u, bytes.NewBuffer(body))
+	} else {
+		req, err = http.NewRequestWithContext(ctx, method, u, nil)
 	}
-	if method == "POST" {
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// set headers
+	if method == http.MethodPost {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("X-Emby-Token", c.token)
-
-	if len(headers) > 0 {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
+	// set params
 	if params != nil {
 		q := req.URL.Query()
 		for i, v := range params {
@@ -207,36 +211,48 @@ func (c *Client) makeRequest(method, url string, body []byte, params params,
 		}
 		req.URL.RawQuery = q.Encode()
 	}
+
+	// DO
 	//start := time.Now()
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed make request: %v", err)
+		return nil, fmt.Errorf("failed to do request: %w", err)
 	}
 	//took := time.Since(start)
 	//logrus.Debugf("%s %s: %d (%d ms)", req.Method, req.URL.Path, resp.StatusCode, took.Milliseconds())
 
-	if resp.StatusCode == 200 || resp.StatusCode == 204 {
+	// check response for errors and return the response
+	return checkResponse(resp)
+}
+
+// checkResponse determines if there is was an error returned by jellyfin.
+func checkResponse(resp *http.Response) (*http.Response, error) {
+	// 200 or 204 is all good
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
 		return resp, nil
 	}
+
+	// read in the body and look for an error message
 	bytes, _ := io.ReadAll(resp.Body)
-	var msg string = "no body"
+	msg := "no body"
 	if len(bytes) > 0 {
 		msg = string(bytes)
 	}
-	var errMsg string
+
+	errMsg := errUnexpectedStatusCode
+
 	switch resp.StatusCode {
-	case 400:
+	case http.StatusBadRequest:
 		errMsg = errInvalidRequest
-	case 401:
+	case http.StatusUnauthorized:
 		errMsg = errUnauthorized
-	case 403:
+	case http.StatusForbidden:
 		errMsg = errForbidden
-	case 404:
+	case http.StatusNotFound:
 		errMsg = errNotFound
-	case 500:
+	case http.StatusInternalServerError:
 		errMsg = errServerError
-	default:
-		errMsg = errUnexpectedStatusCode
 	}
-	return resp, fmt.Errorf("%s, code: %d, msg: %s", errMsg, resp.StatusCode, msg)
+
+	return resp, fmt.Errorf("%s, code: %s, msg: %s", errMsg, resp.Status, msg)
 }

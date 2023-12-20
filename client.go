@@ -2,6 +2,7 @@ package jellyfin
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/json"
@@ -10,14 +11,21 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime"
+	"strings"
+	"time"
+)
+
+const (
+	DefaultTimeOut = 30 * time.Second
 )
 
 // Client is the root struct for all Jellyfin API calls
 type Client struct {
 	HTTPClient    *http.Client
-	BaseURL       string
+	baseURL       *url.URL
 	ClientName    string
 	ClientVersion string
 
@@ -29,13 +37,35 @@ type Client struct {
 	deviceID string // needs to be unique for a user+device combo
 }
 
-func NewClient(baseURL, clientName, clientVersion string) *Client {
+// NewClient creates a jellyfin Client using the url provided.
+func NewClient(urlStr, clientName, clientVersion string) (*Client, error) {
+	// validate the baseurl
+	if urlStr == "" {
+		return nil, errors.New("url must be provided")
+	}
+	if !strings.HasSuffix(urlStr, "/") {
+		urlStr += "/"
+	}
+
+	baseURL, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
-		HTTPClient:    &http.Client{},
-		BaseURL:       baseURL,
+		HTTPClient: &http.Client{
+			Timeout: DefaultTimeOut,
+		},
+		baseURL:       baseURL,
 		ClientName:    clientName,
 		ClientVersion: clientVersion,
-	}
+	}, nil
+}
+
+// BaseURL return a copy of the baseURL.
+func (c *Client) BaseURL() *url.URL {
+	u := *c.baseURL
+	return &u
 }
 
 type loginResponse struct {
@@ -50,26 +80,35 @@ type userResponse struct {
 	UserId   string `json:"Id"`
 }
 
+// Login authenticates a user into the server provided in Client.
+// If the login is successful, the access token is stored for future API calls.
 func (c *Client) Login(username, password string) error {
-	body := map[string]string{}
-	body["Username"] = username
-	body["PW"] = password
-
-	b := &bytes.Buffer{}
-	_ = json.NewEncoder(b).Encode(body)
-
-	auth := c.authHeader()
-	req, err := http.NewRequest("POST", c.BaseURL+"/Users/authenticatebyname", b)
-	if err != nil {
-		return fmt.Errorf("failed to login: %v", err)
+	body := map[string]string{
+		"Username": username,
+		"PW":       password,
 	}
 
-	req.Header.Set("X-Emby-Authorization", auth)
+	u, err := url.JoinPath(c.BaseURL().String(), "/Users/authenticatebyname")
+	if err != nil {
+		return fmt.Errorf("unable to parse url path: %w", err)
+	}
+
+	b := &bytes.Buffer{}
+	if err := json.NewEncoder(b).Encode(body); err != nil {
+		return fmt.Errorf("unable to encode body: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, u, b)
+	if err != nil {
+		return fmt.Errorf("failed to login: %w", err)
+	}
+
+	req.Header.Set("X-Emby-Authorization", c.authHeader())
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to login: %v", err)
+		return fmt.Errorf("failed to login: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -79,7 +118,7 @@ func (c *Client) Login(username, password string) error {
 		dto := loginResponse{}
 		err := json.NewDecoder(resp.Body).Decode(&dto)
 		if err != nil {
-			return fmt.Errorf("invalid login response: %v", err)
+			return fmt.Errorf("invalid login response: %w", err)
 		}
 
 		c.token = dto.Token
@@ -87,18 +126,17 @@ func (c *Client) Login(username, password string) error {
 		c.username = username
 		c.userID = dto.User.UserId
 		c.deviceID = "" // recalculate it next request, should be different per username
-		c.loggedIn = true
 	case http.StatusBadRequest:
 		reason, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("login failed: %v", err)
+			return fmt.Errorf("login failed: %w", err)
 		} else {
 			return fmt.Errorf("login failed: %s", reason)
 		}
 	default:
 		reason, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("login failed: %v", err)
+			return fmt.Errorf("login failed: %w", err)
 		} else {
 			return fmt.Errorf("login failed: %s", reason)
 		}
@@ -115,6 +153,8 @@ type PingResponse struct {
 	Id              string
 }
 
+// Ping queries the jellyfin server for a response.
+// Return is some basic information about the jellyfin server.
 func (c *Client) Ping() (*PingResponse, error) {
 	body, err := c.get("/System/Info/Public", nil)
 	if err != nil {
@@ -131,6 +171,7 @@ func (c *Client) Ping() (*PingResponse, error) {
 	return res, nil
 }
 
+// LoggedInUser returns the user associated with this Client.
 func (c *Client) LoggedInUser() string {
 	return c.username
 }
