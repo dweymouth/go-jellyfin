@@ -40,6 +40,9 @@ type Client struct {
 // NewClient creates a jellyfin Client using the url provided.
 func NewClient(urlStr, clientName, clientVersion string) (*Client, error) {
 	// validate the baseurl
+	if urlStr == "" {
+		return nil, errors.New("url must be provided")
+	}
 	if !strings.HasSuffix(urlStr, "/") {
 		urlStr += "/"
 	}
