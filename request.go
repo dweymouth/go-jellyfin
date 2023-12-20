@@ -2,6 +2,7 @@ package jellyfin
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -124,7 +125,7 @@ func appendFilter(old, new string, separator string) string {
 }
 
 func (c *Client) get(url string, params params) (io.ReadCloser, error) {
-	resp, err := c.makeDo(http.MethodGet, url, nil, params, nil)
+	resp, err := c.makeDo(context.Background(), http.MethodGet, url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -132,7 +133,7 @@ func (c *Client) get(url string, params params) (io.ReadCloser, error) {
 }
 
 func (c *Client) delete(url string, params params) (io.ReadCloser, error) {
-	resp, err := c.makeDo(http.MethodDelete, url, nil, params, nil)
+	resp, err := c.makeDo(context.Background(), http.MethodDelete, url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -144,7 +145,7 @@ func (c *Client) post(url string, params params, body any) (io.ReadCloser, error
 	if err != nil {
 		return nil, fmt.Errorf("marshal POST body: %v", err)
 	}
-	resp, err := c.makeDo(http.MethodPost, url, bodyEnc, params, nil)
+	resp, err := c.makeDo(context.Background(), http.MethodPost, url, bodyEnc, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -174,7 +175,7 @@ func (c *Client) encodeGETUrl(endpoint string, params params) (string, error) {
 // makeDo constructs request and performs Do.
 // Set authorization header and build url query.
 // Make request, parse response code and raise error if needed. Else return response body
-func (c *Client) makeDo(method, path string, body []byte, params params, headers map[string]string) (*http.Response, error) {
+func (c *Client) makeDo(ctx context.Context, method, path string, body []byte, params params, headers map[string]string) (*http.Response, error) {
 	var req *http.Request
 	var err error
 
@@ -185,9 +186,9 @@ func (c *Client) makeDo(method, path string, body []byte, params params, headers
 
 	// generate http.Request
 	if body != nil {
-		req, err = http.NewRequest(method, u, bytes.NewBuffer(body))
+		req, err = http.NewRequestWithContext(ctx, method, u, bytes.NewBuffer(body))
 	} else {
-		req, err = http.NewRequest(method, u, nil)
+		req, err = http.NewRequestWithContext(ctx, method, u, nil)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
