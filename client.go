@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -230,16 +230,16 @@ func deviceName() string {
 	return hostname
 }
 
-const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
+// randomKey returns a string at the length desired of random mixed-case letters.
 func randomKey(length int) string {
-	r := rand.Reader
 	data := make([]byte, length)
-	r.Read(data)
 
-	for i, b := range data {
-		data[i] = letters[b%byte(len(letters))]
+	for i := range data {
+		data[i] = letters[rand.Intn(len(letters))]
 	}
+
 	return string(data)
 }
 
