@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -38,7 +38,7 @@ type Client struct {
 }
 
 // NewClient creates a jellyfin Client using the url provided.
-func NewClient(urlStr, clientName, clientVersion string) (*Client, error) {
+func NewClient(urlStr, clientName, clientVersion string, opts ...ClientOptionFunc) (*Client, error) {
 	// validate the baseurl
 	if urlStr == "" {
 		return nil, errors.New("url must be provided")
@@ -52,14 +52,38 @@ func NewClient(urlStr, clientName, clientVersion string) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
+	cli := &Client{
 		HTTPClient: &http.Client{
 			Timeout: DefaultTimeOut,
 		},
 		baseURL:       baseURL,
 		ClientName:    clientName,
 		ClientVersion: clientVersion,
-	}, nil
+	}
+
+	// perform any options provided
+	for _, option := range opts {
+		option(cli)
+	}
+
+	return cli, nil
+}
+
+// ClientOptionFunc can be used to customize a new jellyfin API client.
+type ClientOptionFunc func(*Client)
+
+// Http timeout override.
+func WithTimeout(timeout time.Duration) ClientOptionFunc {
+	return func(c *Client) {
+		c.HTTPClient.Timeout = timeout
+	}
+}
+
+// Http client override.
+func WithHTTPClient(httpClient *http.Client) ClientOptionFunc {
+	return func(c *Client) {
+		c.HTTPClient = httpClient
+	}
 }
 
 // BaseURL return a copy of the baseURL.
@@ -206,16 +230,16 @@ func deviceName() string {
 	return hostname
 }
 
-const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
+// randomKey returns a string at the length desired of random mixed-case letters.
 func randomKey(length int) string {
-	r := rand.Reader
 	data := make([]byte, length)
-	r.Read(data)
 
-	for i, b := range data {
-		data[i] = letters[b%byte(len(letters))]
+	for i := range data {
+		data[i] = letters[rand.Intn(len(letters))]
 	}
+
 	return string(data)
 }
 
