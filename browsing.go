@@ -189,6 +189,8 @@ func (c *Client) GetInstantMix(id string, idType ItemType, limit int) ([]*Song, 
 		path = "/Artists/%s/InstantMix"
 	case TypeAlbum:
 		path = "/Albums/%s/InstantMix"
+	case TypeSong:
+		path = "/Songs/%s/InstantMix"
 	}
 
 	params := c.defaultParams()
