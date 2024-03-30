@@ -43,6 +43,7 @@ func (c *Client) GetAlbumArtists(opts QueryOpts) ([]*Artist, error) {
 	params.setFilter(mediaTypeArtist, opts.Filter)
 	params.setPaging(opts.Paging)
 	params.setSorting(opts.Sort)
+	params.setIncludeTypes(mediaTypeAlbum)
 	params.setIncludeFields(artistIncludeFields...)
 	resp, err := c.get("/Artists/AlbumArtists", params)
 	if err != nil {
