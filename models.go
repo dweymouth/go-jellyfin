@@ -124,3 +124,26 @@ type SearchResult struct {
 	Songs     []*Song
 	Playlists []*Playlist
 }
+
+type Lyrics struct {
+	Metadata LyricMetadata `json:"Metadata"`
+	Lyrics   []LyricLine   `json:"Lyrics"`
+}
+
+type LyricMetadata struct {
+	Artist   string `json:"Artist"`
+	Album    string `json:"Album"`
+	Title    string `json:"Title"`
+	Author   string `json:"Author"`
+	Length   int64  `json:"Length"`
+	By       string `json:"By"`
+	Offset   int64  `json:"Offset"`
+	Creator  string `json:"Creator"`
+	Version  string `json:"Version"`
+	IsSynced bool   `json:"IsSynced"`
+}
+
+type LyricLine struct {
+	Text  string `json:"Text"`
+	Start int64  `json:"Start"`
+}

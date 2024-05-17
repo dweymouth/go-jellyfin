@@ -1,6 +1,7 @@
 package jellyfin
 
 import (
+	"encoding/json"
 	"fmt"
 	"image"
 	"io"
@@ -42,4 +43,21 @@ func (c *Client) GetStreamURL(id string) (string, error) {
 	params["static"] = "true"
 	params["api_key"] = c.token
 	return c.encodeGETUrl(path, params)
+}
+
+func (c *Client) GetLyrics(itemID string) (*Lyrics, error) {
+	path := fmt.Sprintf("/Audio/%s/Lyrics", itemID)
+	resp, err := c.get(path, c.defaultParams())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	lyrics := &Lyrics{}
+	err = json.NewDecoder(resp).Decode(lyrics)
+	if err != nil {
+		return nil, fmt.Errorf("decode lyric json: %v", err)
+	}
+
+	return lyrics, nil
 }
