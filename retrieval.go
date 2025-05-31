@@ -14,6 +14,15 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
+type TranscodeOptions struct {
+	// Audio codec to request, e.g. "mp3"
+	AudioCodec string
+
+	// Requested audio bit rate, e.g. 192000
+	// If 0, use encoder default.
+	AudioBitRate uint32
+}
+
 func (c *Client) GetItemImageBinary(itemID, imageTag string, size, quality int) (io.ReadCloser, error) {
 	path := fmt.Sprintf("/Items/%s/Images/%s", itemID, imageTag)
 	params := c.defaultParams()
@@ -36,12 +45,18 @@ func (c *Client) GetItemImage(itemID, imageTag string, size, quality int) (image
 	return image, nil
 }
 
-func (c *Client) GetStreamURL(id string) (string, error) {
+func (c *Client) GetStreamURL(id string, transcodeOptions *TranscodeOptions) (string, error) {
 	path := fmt.Sprintf("/audio/%s/stream", id)
 	params := c.defaultParams()
 	params["playSessionId"] = c.deviceID
 	params["static"] = "true"
 	params["api_key"] = c.token
+	if transcodeOptions != nil {
+		params["audioCodec"] = transcodeOptions.AudioCodec
+		if br := transcodeOptions.AudioBitRate; br > 0 {
+			params["audioBitRate"] = strconv.Itoa(int(br))
+		}
+	}
 	return c.encodeGETUrl(path, params)
 }
 
