@@ -10,7 +10,34 @@ const (
 	//	TypeHistory  ItemType = "History"
 	TypeSong  ItemType = "Song"
 	TypeGenre ItemType = "Genre"
+
+	TypeCollectionFolder = "CollectionFolder"
 )
+
+type CollectionType string
+
+const (
+	CollectionTypeMusic     CollectionType = "music"
+	CollectionTypePlaylists CollectionType = "playlists"
+	CollectionTypeMovies    CollectionType = "movies"
+	CollectionTypeShows     CollectionType = "shows"
+	CollectionTypeUnknown   CollectionType = "unknown"
+)
+
+type items struct {
+	Items []*BaseItem `json:"Items"`
+}
+
+type BaseItem struct {
+	Name           string    `json:"Name"`
+	ID             string    `json:"Id"`
+	CollectionType string    `json:"CollectionType"`
+	DateCreated    string    `json:"DateCreated"` // Could also be time.Time with custom unmarshal
+	CanDelete      bool      `json:"CanDelete"`
+	ChildCount     int       `json:"ChildCount,omitempty"`
+	UserData       *UserData `json:"UserData,omitempty"`
+	Type           string    `json:"Type"`
+}
 
 type UserData struct {
 	PlayCount      int    `json:"PlayCount"`

@@ -13,6 +13,24 @@ var (
 	artistIncludeFields   = []string{"ChildCount", "UserData"}
 )
 
+// GetUserViews returns top level collections that the
+// logged-in user can access.
+func (c *Client) GetUserViews() ([]*BaseItem, error) {
+	params := c.defaultParams()
+	resp, err := c.get(fmt.Sprintf("/Users/%s/Views", c.userID), params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	items := items{}
+	err = json.NewDecoder(resp).Decode(&items)
+	if err != nil {
+		return nil, fmt.Errorf("decode json: %v", err)
+	}
+	return items.Items, nil
+}
+
 // GetAlbums returns albums with given sort, filter, and paging options.
 // - Can be used to get an artist's discography with ArtistID filter.
 func (c *Client) GetAlbums(opts QueryOpts) ([]*Album, error) {
@@ -96,11 +114,14 @@ func (c *Client) GetSimilarArtists(artistID string) ([]*Artist, error) {
 	return c.parseArtists(resp)
 }
 
-func (c *Client) GetGenres(paging Paging) ([]NameID, error) {
+func (c *Client) GetGenres(paging Paging, parentID string) ([]NameID, error) {
 	params := c.defaultParams()
 	params.enableRecursive()
 	params.setSorting(Sort{Field: SortByName, Mode: SortAsc})
 	params.setPaging(paging)
+	if parentID != "" {
+		params.setFilter("Genre", Filter{ParentID: parentID})
+	}
 
 	resp, err := c.get("/MusicGenres", params)
 	if err != nil {
