@@ -42,10 +42,10 @@ func searchDtoToItems(rc io.ReadCloser, itemType mediaItemType) (*SearchResult, 
 }
 
 // Search searches audio items
-func (jf *Client) Search(query string, itemType ItemType, paging Paging) (*SearchResult, error) {
+func (jf *Client) Search(query string, itemType ItemType, opts QueryOpts) (*SearchResult, error) {
 	params := jf.defaultParams()
 	params.enableRecursive()
-	params.setPaging(paging)
+	params.setPaging(opts.Paging)
 	params["SearchTerm"] = query
 
 	var mediaType mediaItemType
@@ -65,6 +65,8 @@ func (jf *Client) Search(query string, itemType ItemType, paging Paging) (*Searc
 	default:
 		return nil, fmt.Errorf("itemType %s not supported", itemType)
 	}
+	params.setFilter(mediaType, opts.Filter)
+	params.setSorting(opts.Sort)
 	params.setIncludeTypes(mediaType)
 
 	body, err := jf.get(fmt.Sprintf("/Users/%s/Items", jf.userID), params)
