@@ -58,28 +58,39 @@ type Images struct {
 }
 
 type MediaSource struct {
-	Bitrate   int    `json:"Bitrate"`
-	Container string `json:"Container"`
-	Path      string `json:"Path"`
-	Size      int    `json:"Size"`
+	Bitrate      int            `json:"Bitrate"`
+	Container    string         `json:"Container"`
+	Path         string         `json:"Path"`
+	Size         int            `json:"Size"`
+	MediaStreams []*MediaStream `json:"MediaStreams,omitempty"`
+}
+
+type MediaStream struct {
+	Codec         string `json:"Codec"`
+	SampleRate    int    `json:"SampleRate"`
+	BitRate       int    `json:"BitRate"`
+	BitDepth      int    `json:"BitDepth"`
+	ChannelLayout string `json:"ChannelLayout"`
+	Channels      int    `json:"Channels"`
 }
 
 type Song struct {
-	Name           string        `json:"Name"`
-	Id             string        `json:"Id"`
-	PlaylistItemId string        `json:"PlaylistItemId"`
-	RunTimeTicks   int64         `json:"RunTimeTicks"`
-	ProductionYear int           `json:"ProductionYear"`
-	DateCreated    string        `json:"DateCreated"`
-	IndexNumber    int           `json:"IndexNumber"`
-	Type           string        `json:"Type"`
-	AlbumID        string        `json:"AlbumId"`
-	Album          string        `json:"Album"`
-	DiscNumber     int           `json:"ParentIndexNumber"`
-	Artists        []NameID      `json:"ArtistItems"`
-	ImageTags      Images        `json:"ImageTags"`
-	MediaSources   []MediaSource `json:"MediaSources"`
-	UserData       UserData      `json:"UserData"`
+	Name           string         `json:"Name"`
+	Id             string         `json:"Id"`
+	PlaylistItemId string         `json:"PlaylistItemId"`
+	RunTimeTicks   int64          `json:"RunTimeTicks"`
+	ProductionYear int            `json:"ProductionYear"`
+	DateCreated    string         `json:"DateCreated"`
+	IndexNumber    int            `json:"IndexNumber"`
+	Type           string         `json:"Type"`
+	AlbumID        string         `json:"AlbumId"`
+	Album          string         `json:"Album"`
+	DiscNumber     int            `json:"ParentIndexNumber"`
+	Artists        []NameID       `json:"ArtistItems"`
+	ImageTags      Images         `json:"ImageTags"`
+	MediaSources   []MediaSource  `json:"MediaSources"`
+	MediaStreams   []*MediaStream `json:"MediaStreams,omitempty"`
+	UserData       UserData       `json:"UserData"`
 }
 
 type songs struct {
