@@ -183,10 +183,12 @@ func (c *Client) GetPlaylists() ([]*Playlist, error) {
 		return nil, fmt.Errorf("parse playlists: %v", err)
 	}
 
-	// filter to MediaType == "Audio"
+	// filter MediaTypes:
+	//   - "Audio"   for music playlists created by Jellyfin UI
+	//   - "Unknown" for .m3u files discovered in music libraries
 	musicPlaylists := make([]*Playlist, 0)
 	for _, pl := range dto.Playlists {
-		if pl.MediaType == string(mediaTypeAudio) {
+		if pl.MediaType == string(mediaTypeAudio) || pl.MediaType == string(mediaTypeUnknown) {
 			musicPlaylists = append(musicPlaylists, pl)
 		}
 	}

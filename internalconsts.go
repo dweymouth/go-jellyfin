@@ -6,6 +6,7 @@ const (
 	mediaTypeAlbum        mediaItemType = "MusicAlbum"
 	mediaTypeArtist       mediaItemType = "MusicArtist"
 	mediaTypeAudio        mediaItemType = "Audio"
+	mediaTypeUnknown      mediaItemType = "Unknown"
 	mediaTypePlaylist     mediaItemType = "Playlist"
 	folderTypePlaylists   mediaItemType = "PlaylistsFolder"
 	folderTypeCollections mediaItemType = "CollectionFolder"
