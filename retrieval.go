@@ -21,6 +21,10 @@ type TranscodeOptions struct {
 	// Requested audio bit rate, e.g. 192000
 	// If 0, use encoder default.
 	AudioBitRate uint32
+
+	// Requested container for the transcoding.
+	// Required when requesting transcoding.
+	Container string
 }
 
 func (c *Client) GetItemImageBinary(itemID, imageTag string, size, quality int) (io.ReadCloser, error) {
@@ -48,14 +52,16 @@ func (c *Client) GetItemImage(itemID, imageTag string, size, quality int) (image
 func (c *Client) GetStreamURL(id string, transcodeOptions *TranscodeOptions) (string, error) {
 	path := fmt.Sprintf("/audio/%s/stream", id)
 	params := c.defaultParams()
-	params["playSessionId"] = c.deviceID
-	params["static"] = "true"
+	params["playSessionId"] = randomKey(32)
 	params["api_key"] = c.token
 	if transcodeOptions != nil {
+		params["container"] = transcodeOptions.Container
 		params["audioCodec"] = transcodeOptions.AudioCodec
 		if br := transcodeOptions.AudioBitRate; br > 0 {
 			params["audioBitRate"] = strconv.Itoa(int(br))
 		}
+	} else {
+		params["static"] = "true"
 	}
 	return c.encodeGETUrl(path, params)
 }
