@@ -138,6 +138,7 @@ type Playlist struct {
 	Name               string            `json:"Name"`
 	ID                 string            `json:"Id"`
 	Overview           string            `json:"Overview"`
+	IsPublic           bool              `json:"IsPublic"`
 	DateCreated        string            `json:"DateCreated"`
 	PremiereDate       string            `json:"PremiereDate"`
 	DateLastMediaAdded string            `json:"DateLastMediaAdded"`

@@ -7,14 +7,18 @@ import (
 
 type createPlaylistBody struct {
 	Name      string   `json:"Name"`
+	Overview  string   `json:"Overview,omitempty"`
+	IsPublic  bool     `json:"IsPublic,omitempty"`
 	Ids       []string `json:"Ids,omitempty"`
 	UserID    string   `json:"UserId"`
 	MediaType string   `json:"MediaType"`
 }
 
-func (c *Client) CreatePlaylist(name string, trackIDs []string) error {
+func (c *Client) CreatePlaylist(name, description string, public bool, trackIDs []string) error {
 	body := createPlaylistBody{
 		Name:      name,
+		Overview:  description,
+		IsPublic:  public,
 		UserID:    c.userID,
 		MediaType: "Audio",
 		Ids:       trackIDs,
@@ -24,6 +28,7 @@ func (c *Client) CreatePlaylist(name string, trackIDs []string) error {
 		return fmt.Errorf("create playlist: %v", err)
 	}
 	resp.Close()
+
 	return nil
 }
 
@@ -43,6 +48,7 @@ func (c *Client) GetPlaylistSongs(playlistID string) ([]*Song, error) {
 type updatePlaylistBody struct {
 	Name         string            `json:"Name"`
 	Overview     string            `json:"Overview"`
+	IsPublic     bool              `json:"IsPublic"`
 	DateCreated  string            `json:"DateCreated"`
 	Genres       []string          `json:"Genres"`
 	PremiereDate string            `json:"PremiereDate"`
@@ -50,7 +56,7 @@ type updatePlaylistBody struct {
 	Tags         []string          `json:"Tags"`
 }
 
-func (c *Client) UpdatePlaylistMetadata(playlistID, name, overview string) error {
+func (c *Client) UpdatePlaylistMetadata(playlistID, name, overview string, public bool) error {
 	pl, err := c.GetPlaylist(playlistID)
 	if err != nil {
 		return err
@@ -60,6 +66,7 @@ func (c *Client) UpdatePlaylistMetadata(playlistID, name, overview string) error
 	body := updatePlaylistBody{
 		Name:         name,
 		Overview:     overview,
+		IsPublic:     public,
 		DateCreated:  pl.DateCreated,  // Required
 		Genres:       pl.Genres,       // Required
 		PremiereDate: pl.PremiereDate, // Required
