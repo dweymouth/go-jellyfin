@@ -1,23 +1,27 @@
 package jellyfin
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 )
 
 type createPlaylistBody struct {
 	Name      string   `json:"Name"`
-	Overview  string   `json:"Overview,omitempty"`
 	IsPublic  bool     `json:"IsPublic,omitempty"`
 	Ids       []string `json:"Ids,omitempty"`
 	UserID    string   `json:"UserId"`
 	MediaType string   `json:"MediaType"`
 }
 
+type createPlaylistResponse struct {
+	ID string `json:"Id"`
+}
+
 func (c *Client) CreatePlaylist(name, description string, public bool, trackIDs []string) error {
 	body := createPlaylistBody{
 		Name:      name,
-		Overview:  description,
 		IsPublic:  public,
 		UserID:    c.userID,
 		MediaType: "Audio",
@@ -27,7 +31,21 @@ func (c *Client) CreatePlaylist(name, description string, public bool, trackIDs 
 	if err != nil {
 		return fmt.Errorf("create playlist: %v", err)
 	}
-	resp.Close()
+	defer resp.Close()
+
+	// Jellyfin does not accept a description (Overview) in the CreatePlaylist call,
+	// so we need to add the description in a second request
+	if description != "" {
+		respBytes, err := io.ReadAll(resp)
+		if err != nil {
+			return err
+		}
+		var cpResp createPlaylistResponse
+		if err := json.Unmarshal(respBytes, &cpResp); err != nil {
+			return err
+		}
+		return c.UpdatePlaylistMetadata(cpResp.ID, name, description, public)
+	}
 
 	return nil
 }
