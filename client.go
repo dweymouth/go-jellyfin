@@ -127,6 +127,7 @@ func (c *Client) Login(username, password string) error {
 		return fmt.Errorf("failed to login: %w", err)
 	}
 
+	req.Header.Set("Authorization", c.authHeader())
 	req.Header.Set("X-Emby-Authorization", c.authHeader())
 	req.Header.Set("Content-Type", "application/json")
 
