@@ -199,6 +199,9 @@ func (c *Client) makeDo(ctx context.Context, method, path string, body []byte, p
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("X-Emby-Token", c.token)
+	if c.token != "" {
+		req.Header.Set("Authorization", c.authHeader()+fmt.Sprintf(", Token=\"%s\"", c.token))
+	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
